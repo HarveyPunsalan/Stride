@@ -1,7 +1,21 @@
 import { Router } from "express";
 
-const router = Router()
+const router = Router();
 
-// routes will go here
+router.get("/github", (req, res) => {
+    const { GITHUB_CLIENT_ID } = process.env;
 
-export default router
+    if (!GITHUB_CLIENT_ID) {
+        throw new Error("Missing GITHUB_CLIENT_ID");
+    }
+
+    const params = new URLSearchParams({
+        client_id: GITHUB_CLIENT_ID,
+        redirect_uri: "http://localhost:3001/auth/callback",
+        scope: "read:user repo"
+    });
+
+    res.redirect(`https://github.com/login/oauth/authorize?${params}`);
+});
+
+export default router;
