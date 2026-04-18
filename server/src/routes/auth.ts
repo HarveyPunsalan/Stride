@@ -2,6 +2,8 @@ import { Router } from "express";
 import { Octokit } from "@octokit/rest";
 import { supabase } from "../lib/supabase";
 import { signToken } from "../lib/jwt";
+import { authMiddleware } from "../middleware/auth";
+import type { AuthRequest } from "../middleware/auth"; 
 
 const router = Router();
 
@@ -60,6 +62,20 @@ router.get("/callback", async (req, res) => {
 
   const token = signToken(user!.id);
   res.redirect(`${process.env.CLIENT_URL}/dashboard?token=${token}`);
+});
+
+router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
+  const { data: user, error } = await supabase
+  .from('users')
+  .select('id, github_id, username, display_name, avatar_url, created_at')  
+  .eq('id', req.userId!)  
+  .single();
+
+  if (!user) {
+  return res.status(404).json({ error: 'User not found' });
+}
+
+res.json(user);
 });
 
 export default router;
