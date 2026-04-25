@@ -1,3 +1,4 @@
+import { bytes } from "node:stream/consumers";
 import { supabase } from "../lib/supabase";
 import { Octokit } from "@octokit/rest";
 
@@ -34,5 +35,33 @@ export async function syncUserGitHubData(userId: string): Promise<void> {
     { onConflict: "github_repo_id" },
   );
 
+  const languageTotals: Record<string, number> = {};
+  for (const repo of repos) {
+    const { data: languages } = await octokit.rest.repos.listLanguages({
+      owner: repo.owner.login,
+      repo: repo.name,
+    });
+
+    for (const [language, bytes] of Object.entries(languages)) {
+      languageTotals[language] = (languageTotals[language] ?? 0) + bytes;
+    }
+  }
+
+  const totalBytes = Object.values(languageTotals).reduce(
+    (sum, bytes) => sum + bytes,
+    0,
+  );
+  const languageStats = Object.entries(languageTotals).map(
+    ([language, bytes]) => ({
+      user_id: userId,
+      language,
+      bytes,
+      percentage: (bytes / totalBytes) * 100,
+      synced_at: new Date().toISOString(),
+    }),
+  );
+
+  await supabase.from('language_stats').delete().eq('user_id', userId)
+  await supabase.from('language_stats').insert(languageStats)
   // will be filled in across tickets 3.2 - 3.5
 }
