@@ -93,5 +93,18 @@ export async function syncUserGitHubData(userId: string): Promise<void> {
     }
   }
 `);
+
+  const weeks =
+    result.viewer.contributionsCollection.contributionCalendar.weeks;
+  const days = weeks.flatMap((week) => week.contributionDays);
+
+  await supabase.from("commit_stats").delete().eq("user_id", userId);
+  await supabase.from("commit_stats").insert(
+    days.map((day) => ({
+      user_id: userId,
+      date: day.date,
+      commit_count: day.contributionCount,
+    })),
+  );
   // will be filled in across tickets 3.2 - 3.5
 }
