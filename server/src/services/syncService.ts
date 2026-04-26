@@ -61,7 +61,37 @@ export async function syncUserGitHubData(userId: string): Promise<void> {
     }),
   );
 
-  await supabase.from('language_stats').delete().eq('user_id', userId)
-  await supabase.from('language_stats').insert(languageStats)
+  await supabase.from("language_stats").delete().eq("user_id", userId);
+  await supabase.from("language_stats").insert(languageStats);
+
+  const result = await octokit.graphql<{
+    viewer: {
+      contributionsCollection: {
+        contributionCalendar: {
+          weeks: {
+            contributionDays: {
+              date: string;
+              contributionCount: number;
+            }[];
+          }[];
+        };
+      };
+    };
+  }>(`
+  query {
+    viewer {
+      contributionsCollection {
+        contributionCalendar {
+          weeks {
+            contributionDays {
+              date
+              contributionCount
+            }
+          }
+        }
+      }
+    }
+  }
+`);
   // will be filled in across tickets 3.2 - 3.5
 }
