@@ -114,19 +114,29 @@ export async function syncUserGitHubData(userId: string): Promise<void> {
     },
   );
 
-  const totalPRs = allPRs.length
-  const mergedPRs = allPRs.filter((pr) => pr.pull_request?.merged_at).length
-  const closedPRs = allPRs.filter((pr) => pr.state === "closed" && !pr.pull_request?.merged_at).length
+  const totalPRs = allPRs.length;
+  const mergedPRs = allPRs.filter((pr) => pr.pull_request?.merged_at).length;
+  const closedPRs = allPRs.filter(
+    (pr) => pr.state === "closed" && !pr.pull_request?.merged_at,
+  ).length;
 
   const mergeRate = (mergedPRs / totalPRs) * 100;
-  await supabase.from("pr_stats").upsert({
-    user_id: userId,
-    total_prs: totalPRs,
-    merged_prs: mergedPRs,
-    closed_prs: closedPRs,
-    merge_rate: mergeRate,
-    synced_at: new Date().toISOString(),
-  }, { onConflict: "user_id" })
+  await supabase.from("pr_stats").upsert(
+    {
+      user_id: userId,
+      total_prs: totalPRs,
+      merged_prs: mergedPRs,
+      closed_prs: closedPRs,
+      merge_rate: mergeRate,
+      synced_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+
+  await supabase
+    .from("users")
+    .update({ last_synced_at: new Date().toISOString() })
+    .eq("id", userId);
 
   // will be filled in across tickets 3.2 - 3.5
 }
