@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../lib/api";
 import { BarChart, Bar, XAxis, YAxis, LabelList } from "recharts";
+import ContributionHeatmap from "../components/ContributionHeatmap";
 
 type DashboardStats = {
   streak: number;
@@ -38,7 +39,10 @@ function Dashboard() {
           <LabelList dataKey="percentage" position="right" />
         </Bar>
       </BarChart>
-    </div>  
+      <div className="mt-4">
+        <ContributionHeatmap commitStats={data?.commitStats ?? []} />
+      </div>
+    </div>
   );
 }
 
