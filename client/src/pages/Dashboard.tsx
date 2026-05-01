@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../lib/api";
+import { BarChart, Bar, XAxis, YAxis, LabelList } from "recharts";
 
 type DashboardStats = {
   streak: number;
   commitStats: { date: string; commit_count: number }[];
   prStats: { merge_rate: number };
   repoCount: number;
+  languageStats: { language: string; percentage: number }[];
 };
 
 function Dashboard() {
@@ -28,7 +30,15 @@ function Dashboard() {
       <div>{data?.prStats?.merge_rate}</div>
       <div>{data?.repoCount}</div>
       <div>{commitThisMonth}</div>
-    </div>
+
+      <BarChart width={600} height={300} data={data?.languageStats}>
+        <XAxis dataKey="language" />
+        <YAxis />
+        <Bar dataKey="percentage">
+          <LabelList dataKey="percentage" position="right" />
+        </Bar>
+      </BarChart>
+    </div>  
   );
 }
 
