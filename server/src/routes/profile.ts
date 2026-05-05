@@ -49,7 +49,7 @@ router.get("/:username", async (req, res) => {
   return res.status(200).json({
     username: user.username,
     display_name: user.display_name,
-    avatar_url: user.avatar.url,
+    avatar_url: user.avatar_url,
     language_stats,
     commit_stats,
     pr_stats,
