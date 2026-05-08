@@ -15,7 +15,7 @@ function App() {
         <Route path="/aiCoach" element={<AiCoach />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/" element={<Landing />} />
-        <Route path="/publicProfile" element={<PublicProfile />} />
+        <Route path="/profile/:username" element={<PublicProfile />} />
         <Route path="/repositories" element={<Repositories />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
