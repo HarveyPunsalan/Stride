@@ -80,4 +80,21 @@ router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   res.json(user);
 });
 
+router.patch("/settings", authMiddleware, async (req: AuthRequest, res) => {
+  const { is_profile_public, show_repositories } = req.body;
+
+  const { data: user, error } = await supabase
+    .from("users")
+    .update({ is_profile_public, show_repositories })
+    .eq("id", req.userId!)
+    .select()
+    .single();
+
+  if (error || !user) {
+    return res.status(500).json({ error: "Failed to update settings" });
+  }
+
+  res.json(user);
+});
+
 export default router;
