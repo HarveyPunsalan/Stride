@@ -69,7 +69,7 @@ router.get("/callback", async (req, res) => {
 router.get("/me", authMiddleware, async (req: AuthRequest, res) => {
   const { data: user, error } = await supabase
     .from("users")
-    .select("id, github_id, username, display_name, avatar_url, created_at")
+    .select("id, github_id, username, display_name, avatar_url, is_profile_public, show_repositories, created_at")
     .eq("id", req.userId!)
     .single();
 
