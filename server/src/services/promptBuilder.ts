@@ -26,7 +26,6 @@ export async function buildCareerCoachPrompt(userId: string): Promise<string> {
     .order("date", { ascending: false });
 
   const top3Languages = (languageStats ?? []).slice(0, 3);
-  
 
   const totalCommits = (commitStats ?? []).reduce(
     (sum, row) => sum + row.commit_count,
@@ -36,4 +35,32 @@ export async function buildCareerCoachPrompt(userId: string): Promise<string> {
     commitStats && commitStats.length > 0
       ? (totalCommits / commitStats.length).toFixed(1)
       : "0";
+
+  let streak = 0;
+  const today = new Date().toISOString().split("T")[0];
+
+  for (const row of commitStats ?? []) {
+    if (row.commit_count > 0) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return `You are a senior software engineering career coach.
+
+Analyze this developer's GitHub activity and provide a personalized growth report.
+
+## Developer Stats
+- Top languages: ${top3Languages.map((l) => `${l.language} (${l.percentage}%)`).join(", ")}
+- Average daily commits (last 30 days): ${avgDailyCommits}
+- Current commit streak: ${streak} days
+- Total PRs: ${prStats?.total_prs ?? 0}
+- Merged PRs: ${prStats?.merged_prs ?? 0}
+- PR merge rate: ${prStats?.merge_rate ?? 0}%
+
+## Task
+1. Identify 2-3 skill gaps based on these stats
+2. Give 3 specific recommendations to reach a senior level
+3. Keep it concise and actionable`;
 }
