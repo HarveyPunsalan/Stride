@@ -5,6 +5,7 @@ import syncRouter from './routes/sync';
 import 'dotenv/config';
 import dashboardRouter from './routes/dashboard';
 import profileRouter from './routes/profile';
+import aiRouter from './routes/ai';
 
 const app = express()
 const PORT = process.env.PORT || 3001;
@@ -15,6 +16,7 @@ app.use('/auth', router)
 app.use('/sync', syncRouter)
 app.use('/dashboard', dashboardRouter)
 app.use('/profile', profileRouter)
+app.use('/ai', aiRouter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

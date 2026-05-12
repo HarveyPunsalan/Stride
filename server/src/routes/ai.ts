@@ -1,11 +1,9 @@
 import { Router } from "express";
-import Anthropic from "@anthropic-ai/sdk";
 import { supabase } from "../lib/supabase";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { buildCareerCoachPrompt } from "../services/promptBuilder";
 
 const router = Router();
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
   const userId = req.userId;
@@ -36,18 +34,47 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
   const prompt = await buildCareerCoachPrompt(userId);
   let fullReport = "";
 
-  const stream = anthropic.messages.stream({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const response = await fetch(
+    "https://router.huggingface.co/novita/v3/openai/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "meta-llama/llama-3.3-70b-instruct",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1024,
+        stream: true,
+      }),
+    }
+  );
 
-  stream.on("text", (text) => {
-    fullReport += text;
-    res.write(`data: ${text}\n\n`);
-  });
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
 
-  await stream.finalMessage();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split("\n").filter(line => line.startsWith("data: "));
+
+    for (const line of lines) {
+      const data = line.replace("data: ", "");
+      if (data === "[DONE]") continue;
+
+      try {
+        const parsed = JSON.parse(data);
+        const text = parsed.choices?.[0]?.delta?.content;
+        if (text) {
+          fullReport += text;
+          res.write(`data: ${text}\n\n`);
+        }
+      } catch {}
+    }
+  }
 
   const expiresAt = new Date(
     Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -63,3 +90,5 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
   res.write("data: [DONE]\n\n");
   res.end();
 });
+
+export default router;
