@@ -46,4 +46,20 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
     fullReport += text;
     res.write(`data: ${text}\n\n`);
   });
+
+  await stream.finalMessage();
+
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  await supabase.from("ai_reports").upsert({
+    user_id: userId,
+    report_content: fullReport,
+    generated_at: new Date().toISOString(),
+    expires_at: expiresAt,
+  });
+
+  res.write("data: [DONE]\n\n");
+  res.end();
 });
