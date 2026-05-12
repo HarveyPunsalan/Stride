@@ -32,4 +32,18 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+
+  const prompt = await buildCareerCoachPrompt(userId);
+  let fullReport = "";
+
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  stream.on("text", (text) => {
+    fullReport += text;
+    res.write(`data: ${text}\n\n`);
+  });
 });
