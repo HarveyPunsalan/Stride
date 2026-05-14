@@ -23,7 +23,12 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
     .single();
 
   if (cachedReport) {
-    res.json({ report: cachedReport.report_content });
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.write(`data: ${cachedReport.report_content}\n\n`);
+    res.write("data: [DONE]\n\n");
+    res.end();
     return;
   }
 
@@ -39,7 +44,7 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
     {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+        Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -48,7 +53,7 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
         max_tokens: 1024,
         stream: true,
       }),
-    }
+    },
   );
 
   const reader = response.body!.getReader();
@@ -59,7 +64,7 @@ router.get("/report", authMiddleware, async (req: AuthRequest, res) => {
     if (done) break;
 
     const chunk = decoder.decode(value);
-    const lines = chunk.split("\n").filter(line => line.startsWith("data: "));
+    const lines = chunk.split("\n").filter((line) => line.startsWith("data: "));
 
     for (const line of lines) {
       const data = line.replace("data: ", "");
